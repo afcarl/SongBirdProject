@@ -11,8 +11,8 @@ filnam = path2dat+'song_data.hdf5'
 f = h5py.File(filnam,'r')
 
 dset = f[u'songdata']
-x_train = dset[0:50000]
-x_test = dset[50000:51000]
+x_train = dset[0:100000]
+x_test = dset[100000:110000]
 
 x_train += 1.0
 x_test += 1.0
@@ -20,6 +20,11 @@ x_train /= 2.0
 x_test /= 2.0
 x_train = x_train.reshape((len(x_train), np.prod(x_train.shape[1:])))
 x_test = x_test.reshape((len(x_test), np.prod(x_test.shape[1:])))
+
+stack = 5
+
+x_train = x_train.reshape(len(x_train)/stack, stack*x_train.shape[1])
+x_test = x_test.reshape(len(x_test)/stack, stack*x_test.shape[1])
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,11 +38,11 @@ from keras.datasets import mnist
 from keras import initializers
 
 batch_size = 10
-original_dim = 120
+original_dim = 120*stack
 latent_dim = 15
-intermediate_dim1 = 90
-intermediate_dim2 = 60
-intermediate_dim3 = 30
+intermediate_dim1 = 90*stack
+intermediate_dim2 = 60*stack
+intermediate_dim3 = 30*stack
 epochs = 30
 epsilon_std = 1.0
 
@@ -59,10 +64,14 @@ def sampling(args):
 z = Lambda(sampling, output_shape=(latent_dim,))([z_mean, z_log_var])
 
 # we instantiate these layers separately so as to reuse them later
-decoder_h = Dense(intermediate_dim3, activation='relu', kernel_initializer=initializers.he_normal())
+decoder_h3 = Dense(intermediate_dim3, activation='relu', kernel_initializer=initializers.he_normal())
+decoder_h2 = Dense(intermediate_dim2, activation='relu', kernel_initializer=initializers.he_normal())
+decoder_h1 = Dense(intermediate_dim1, activation='relu', kernel_initializer=initializers.he_normal())
 decoder_mean = Dense(original_dim, activation='sigmoid', kernel_initializer=initializers.he_normal())
-h_decoded = decoder_h(z)
-x_decoded_mean = decoder_mean(h_decoded)
+h_decoded3 = decoder_h3(z)
+h_decoded2 = decoder_h2(h_decoded3)
+h_decoded1 = decoder_h1(h_decoded2)
+x_decoded_mean = decoder_mean(h_decoded1)
 
 
 
@@ -72,9 +81,10 @@ class CustomVariationalLayer(Layer):
         self.is_placeholder = True
         super(CustomVariationalLayer, self).__init__(**kwargs)
     def vae_loss(self, x, x_decoded_mean):
-        xent_loss = original_dim * metrics.mean_squared_error(x, x_decoded_mean)
+        # xent_loss = original_dim * metrics.binary_crossentropy(x, x_decoded_mean)
+        mse_loss = original_dim * metrics.mean_squared_error(x, x_decoded_mean)
         kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-        return K.mean(xent_loss + kl_loss)
+        return K.mean(mse_loss + kl_loss)
     def call(self, inputs):
         x = inputs[0]
         x_decoded_mean = inputs[1]
@@ -102,14 +112,15 @@ tmp = Model(x, x_decoded_mean)
 
 vae.fit(x_train,
         shuffle=True,
-        epochs=30,
+        epochs=20,
         batch_size=batch_size,
         validation_data=(x_test, x_test))
 
-res = tmp.predict(x_test[0:100], batch_size=batch_size)
-plt.imshow(x_test[0:100], cmap = 'Greys_r')
+
+plt.imshow(x_test[0:100].reshape(500, -1), cmap = 'Greys_r')
 plt.show()
-plt.imshow(res, cmap = 'Greys_r')
+res = tmp.predict(x_test[0:100], batch_size=batch_size)
+plt.imshow(res.reshape(500, -1), cmap = 'Greys_r')
 plt.show()
 
 
