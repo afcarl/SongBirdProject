@@ -79,7 +79,7 @@ fd3 = Dense(100, activation='tanh', kernel_initializer=initializers.he_normal())
 fd3b = keras.layers.normalization.BatchNormalization()(fd3)
 
 fd4_mu = Dense(original_dim, activation='tanh', kernel_initializer=initializers.he_normal())(fd3b)
-fd4_sigma = Dense(1, activation='tanh', kernel_initializer=initializers.he_normal())(fd3b)
+fd4_sigma = Dense(1, kernel_initializer=initializers.he_normal())(fd3b)
 
 
 # Custom loss layer
@@ -89,10 +89,12 @@ class CustomVariationalLayer(Layer):
         super(CustomVariationalLayer, self).__init__(**kwargs)
     def vae_loss(self, x, x_decoded_mean, x_decoded_var):
         # xent_loss = original_dim * metrics.binary_crossentropy(x, x_decoded_mean)
-        invsig = - 0.5 / K.exp(x_decoded_var)
-        mse_loss = metrics.mean_squared_error(x, x_decoded_mean) * invsig - 0.5 * x_decoded_var - 0.4
-        kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-        return K.mean(mse_loss + kl_loss)
+        mse_loss = (-(0.4 + 0.5 * x_decoded_var) -
+                      0.5 * (K.mean((x - x_decoded_mean)**2, axis = -1) / K.exp(x_decoded_var)))
+        # invsig = - 0.5 / K.exp(x_decoded_var)
+        # mse_loss = metrics.mean_squared_error(x, x_decoded_mean) * invsig - 0.5 * x_decoded_var - 0.4
+        kl_loss = + 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
+        return K.mean(-1*mse_loss - kl_loss)
     def call(self, inputs):
         x = inputs[0]
         x_decoded_mean = inputs[1]
@@ -127,11 +129,11 @@ vae.fit(x_train,
         validation_data=(x_test, x_test))
 
 
-plt.imshow(x_test[0:100].reshape(100*stack, -1), cmap = 'Greys_r')
-plt.show()
+# plt.imshow(x_test[0:100].reshape(100*stack, -1), cmap = 'Greys_r')
+# plt.show()
 mean = tmp.predict(x_test[0:100], batch_size=batch_size)
 var = tmp2.predict(x_test[0:100], batch_size=batch_size)
-
+res = mean + np.exp(var/2)*np.random.normal(size=(100, original_dim), loc=0.,scale=epsilon_std)
 plt.imshow(res.reshape(100*stack, -1), cmap = 'Greys_r')
 plt.show()
 
