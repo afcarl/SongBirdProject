@@ -50,12 +50,13 @@ epsilon_std = 1.0
 
 
 latent_dim = 6
+lrelu = keras.layers.advanced_activations.LeakyReLU(alpha=0.3)
 x = Input(batch_shape=(batch_size, original_dim))
 
-fe1 = Dense(intermediate_dim1, activation='tanh', kernel_initializer=initializers.he_normal())(x)
+fe1 = Dense(intermediate_dim1, activation=lrelu, kernel_initializer=initializers.he_normal())(x)
 fe1b = keras.layers.normalization.BatchNormalization()(fe1)
-fe2 = Dense(intermediate_dim2, activation='tanh', kernel_initializer=initializers.he_normal())(fe1b)
-fe3 = Dense(intermediate_dim3, activation='tanh', kernel_initializer=initializers.he_normal())(fe2)
+fe2 = Dense(intermediate_dim2, activation=lrelu, kernel_initializer=initializers.he_normal())(fe1b)
+fe3 = Dense(intermediate_dim3, activation=lrelu, kernel_initializer=initializers.he_normal())(fe2)
 fe3b = keras.layers.normalization.BatchNormalization()(fe3)
 
 z_mean = Dense(latent_dim, kernel_initializer=initializers.he_normal())(fe3b)
@@ -72,13 +73,13 @@ def sampling(args):
 z = Lambda(sampling, output_shape=(latent_dim,))([z_mean, z_log_var])
 
 # we instantiate these layers separately so as to reuse them later
-fd1 = Dense(intermediate_dim3, activation='tanh', kernel_initializer=initializers.he_normal())(z)
+fd1 = Dense(intermediate_dim3, activation=lrelu, kernel_initializer=initializers.he_normal())(z)
 fd1b = keras.layers.normalization.BatchNormalization()(fd1)
-fd2 = Dense(intermediate_dim2, activation='tanh', kernel_initializer=initializers.he_normal())(fd1b)
-fd3 = Dense(intermediate_dim1, activation='tanh', kernel_initializer=initializers.he_normal())(fd2)
+fd2 = Dense(intermediate_dim2, activation=lrelu, kernel_initializer=initializers.he_normal())(fd1b)
+fd3 = Dense(intermediate_dim1, activation=lrelu, kernel_initializer=initializers.he_normal())(fd2)
 fd3b = keras.layers.normalization.BatchNormalization()(fd3)
 
-fd4_mu = Dense(original_dim, activation='tanh', kernel_initializer=initializers.he_normal())(fd3b)
+fd4_mu = Dense(original_dim, activation=lrelu, kernel_initializer=initializers.he_normal())(fd3b)
 fd4_sigma = Dense(1, kernel_initializer=initializers.he_normal())(fd3b)
 
 
