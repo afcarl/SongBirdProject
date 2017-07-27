@@ -106,7 +106,7 @@ class CustomVariationalLayer(Layer):
 
 y = CustomVariationalLayer()([x, fd4_mu, fd4_sigma])
 vae = Model(x, y)
-vae.compile(optimizer='rmsprop', loss=None)
+vae.compile(optimizer='adam', loss=None)
 np.random.shuffle(x_train)
 np.random.shuffle(x_test)
 
@@ -140,8 +140,11 @@ res = mean + np.exp(var/2)*np.random.normal(size=(samples, original_dim), loc=0.
 plt.imshow(mean.reshape(samples*stack, -1), cmap = 'Greys_r')
 plt.show()
 
+plt.imshow(res.reshape(samples*stack, -1), cmap = 'Greys_r')
+plt.show()
 
-
+print (var)
+print (np.exp(var/2)*np.random.normal(size=(samples, original_dim), loc=0.,scale=epsilon_std))
 
 decoder_input = Input(shape=(latent_dim,))
 _h_decoded = decoder_h(decoder_input)
