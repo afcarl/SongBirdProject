@@ -50,6 +50,8 @@ array([[ 0.37117556, -0.01878777, -0.0294915 , ..., -0.11070047,
         -0.15280869, -0.28172838]])
 
 ```
+### code
+[Code](https://github.com/nishnik/SongBirdProject/blob/efcc61e3196dea398523a641f89278a08b947b4f/vae_keras_torch.py)
 
 ## Results with all tanh and adam as optimizer
 
@@ -95,6 +97,8 @@ array([[-3.61829615],
  [-0.01945704 -0.19417686  0.08256923 ...,  0.1830672  -0.34806057
   -0.02569835]]
 ```
+### Code
+[code](https://github.com/nishnik/SongBirdProject/blob/4eb35be29a225cca7279fef5455ea464606d9956/vae_keras_torch.py)
 
 ## Results with all leaky relu and adam as optimizer
 
@@ -139,3 +143,6 @@ array([[-3.61829615],
  [ 0.11078715  0.08144164 -0.13095651 ...,  0.1854084   0.18917225
   -0.10228315]]
 ```
+
+### Code
+[code](https://github.com/nishnik/SongBirdProject/blob/3621e7f3c87205228829e4d42e63b98644371ccd/vae_keras_torch.py)
