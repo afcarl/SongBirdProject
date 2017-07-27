@@ -21,7 +21,7 @@ x_test /= 2.0
 x_train = x_train.reshape((len(x_train), np.prod(x_train.shape[1:])))
 x_test = x_test.reshape((len(x_test), np.prod(x_test.shape[1:])))
 
-stack = 1
+stack = 8
 
 x_train = x_train.reshape(len(x_train)/stack, stack*x_train.shape[1])
 x_test = x_test.reshape(len(x_test)/stack, stack*x_test.shape[1])
@@ -40,7 +40,7 @@ import keras as keras
 
 batch_size = 10
 original_dim = 120*stack
-latent_dim = 15
+latent_dim = 15*stack
 intermediate_dim1 = 90*stack
 intermediate_dim2 = 60*stack
 intermediate_dim3 = 30*stack
@@ -52,10 +52,10 @@ epsilon_std = 1.0
 latent_dim = 6
 x = Input(batch_shape=(batch_size, original_dim))
 
-fe1 = Dense(100, activation='tanh', kernel_initializer=initializers.he_normal())(x)
+fe1 = Dense(intermediate_dim1, activation='tanh', kernel_initializer=initializers.he_normal())(x)
 fe1b = keras.layers.normalization.BatchNormalization()(fe1)
-fe2 = Dense(60, activation='tanh', kernel_initializer=initializers.he_normal())(fe1b)
-fe3 = Dense(30, activation='tanh', kernel_initializer=initializers.he_normal())(fe2)
+fe2 = Dense(intermediate_dim2, activation='tanh', kernel_initializer=initializers.he_normal())(fe1b)
+fe3 = Dense(intermediate_dim3, activation='tanh', kernel_initializer=initializers.he_normal())(fe2)
 fe3b = keras.layers.normalization.BatchNormalization()(fe3)
 
 z_mean = Dense(latent_dim, kernel_initializer=initializers.he_normal())(fe3b)
@@ -72,10 +72,10 @@ def sampling(args):
 z = Lambda(sampling, output_shape=(latent_dim,))([z_mean, z_log_var])
 
 # we instantiate these layers separately so as to reuse them later
-fd1 = Dense(30, activation='tanh', kernel_initializer=initializers.he_normal())(z)
+fd1 = Dense(intermediate_dim3, activation='tanh', kernel_initializer=initializers.he_normal())(z)
 fd1b = keras.layers.normalization.BatchNormalization()(fd1)
-fd2 = Dense(60, activation='tanh', kernel_initializer=initializers.he_normal())(fd1b)
-fd3 = Dense(100, activation='tanh', kernel_initializer=initializers.he_normal())(fd2)
+fd2 = Dense(intermediate_dim2, activation='tanh', kernel_initializer=initializers.he_normal())(fd1b)
+fd3 = Dense(intermediate_dim1, activation='tanh', kernel_initializer=initializers.he_normal())(fd2)
 fd3b = keras.layers.normalization.BatchNormalization()(fd3)
 
 fd4_mu = Dense(original_dim, activation='tanh', kernel_initializer=initializers.he_normal())(fd3b)
@@ -122,19 +122,22 @@ tmp2 = Model(x, fd4_sigma)
 
 
 
-vae.fit(x_train,
+hist = vae.fit(x_train,
         shuffle=True,
-        epochs=20,
+        epochs=10,
         batch_size=batch_size,
         validation_data=(x_test, x_test))
 
+plt.plot(hist.history['loss'][1:])
+plt.show()
 
 # plt.imshow(x_test[0:100].reshape(100*stack, -1), cmap = 'Greys_r')
 # plt.show()
-mean = tmp.predict(x_test[0:100], batch_size=batch_size)
-var = tmp2.predict(x_test[0:100], batch_size=batch_size)
-res = mean + np.exp(var/2)*np.random.normal(size=(100, original_dim), loc=0.,scale=epsilon_std)
-plt.imshow(res.reshape(100*stack, -1), cmap = 'Greys_r')
+samples = 10
+mean = tmp.predict(x_test[0:samples], batch_size=batch_size)
+var = tmp2.predict(x_test[0:samples], batch_size=batch_size)
+res = mean + np.exp(var/2)*np.random.normal(size=(samples, original_dim), loc=0.,scale=epsilon_std)
+plt.imshow(mean.reshape(samples*stack, -1), cmap = 'Greys_r')
 plt.show()
 
 
